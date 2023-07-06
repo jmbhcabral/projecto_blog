@@ -12,9 +12,16 @@ class MenuLinkAdmin(admin.ModelAdmin):
     search_fields = 'id', 'text', 'url_or_path'
 
 
+class MenuLinkInline(admin.TabularInline):
+    model = MenuLink
+    # linhas extra vazias
+    extra = 1
+
+
 @admin.register(SiteSetup)
 class SiteSetupAdmin(admin.ModelAdmin):
     list_display = 'title', 'description',
+    inlines = MenuLinkInline,
 
     # o utilizador só pode criar 1 setup. Se já exixtir desaparece o adicionar
     def has_add_permission(self, request):
