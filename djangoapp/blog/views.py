@@ -1,28 +1,53 @@
+from typing import Any
 from django.core.paginator import Paginator
+from django.db.models.query import QuerySet
 from django.shortcuts import render
 from blog.models import Post, Page
 from django.db.models import Q
 from django.contrib.auth.models import User
 from django.http import Http404
+from django.views.generic import ListView
 
 PER_PAGE = 9
 
 
-def index(request):
-    posts = Post.objects.get_published()
+class PostListView(ListView):
+    model = Post
+    template_name = 'blog/pages/index.html'
+    context_object_name = 'posts'
+    ordering = '-pk',
+    paginate_by = PER_PAGE
+    queryset = Post.objects.get_published()
 
-    paginator = Paginator(posts, PER_PAGE)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+    # def get_queryset(self):
+    #     queryset = super().get_queryset()
+    #     queryset = queryset.filter(is_published=True)
+    #     return queryset
 
-    return render(
-        request,
-        'blog/pages/index.html',
-        {
-            'page_obj': page_obj,
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context.update({
             'page_title': 'Home - ',
-        }
-    )
+        })
+        return context
+
+
+# def index(request):
+#     posts = Post.objects.get_published()
+
+#     paginator = Paginator(posts, PER_PAGE)
+#     page_number = request.GET.get("page")
+#     page_obj = paginator.get_page(page_number)
+
+#     return render(
+#         request,
+#         'blog/pages/index.html',
+#         {
+#             'page_obj': page_obj,
+#             'page_title': 'Home - ',
+#         }
+#     )
 
 
 def created_by(request, author_pk):
@@ -128,36 +153,48 @@ def search(request):
 
 
 def page(request, slug):
-    page = (
+    page_obj = (
         Page
         .objects
         .filter(is_published=True)
         .filter(slug=slug)
         .first()
     )
+
+    if page_obj is None:
+        raise Http404
+
+    page_title = f'{page_obj.title} - Pagína - '
+
     return render(
         request,
         'blog/pages/page.html',
         {
-            'page': page,
-            'page_title': 'Home - ',
+            'page': page_obj,
+            'page_title': page_title,
         }
     )
 
 
 def post(request, slug):
-    post = (
+    post_obj = (
         Post
         .objects
         .get_published()
         .filter(slug=slug)
         .first()
     )
+
+    if post_obj is None:
+        raise Http404
+
+    page_title = f'{post_obj.title} - Post - '
+
     return render(
         request,
         'blog/pages/post.html',
         {
-            'post': post,
-            'page_title': 'Home - ',
+            'post': post_obj,
+            'page_title': page_title,
         }
     )
